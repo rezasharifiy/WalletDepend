@@ -1,46 +1,109 @@
+
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
-group 'ir.fanap.wallet-dependencies'
-
-version '1.0'
-
 project.ext {
-    mavGitUrl = 'https://github.com/rezasharifiy/WalletDepend.git'
-    mavProjectName = 'WalletDepend'
-    mavLibraryLicenses = ["Apache-2.0":'http://www.apache.org/licenses/LICENSE-2.0.txt']
-    mavLibraryDescription = "\t\n" +
-            "A simple library that implement remote dependenies."
-    mavPublishToMavenLocal = true
-    mavSiteUrl = 'https://github.com/rezasharifiy/WalletDepend'
+    bintrayRepo = 'wallet'
+    bintrayName = 'walletdepend'
+
+    publishedGroupId = 'ir.fanap.walletdepend'
+    libraryName = 'wallet dependencies'
+    artifact = 'wallet-dependencies'
+
+    libraryDescription = 'A simple library that implement remote dependencies.'
+
+    siteUrl = 'https://github.com/rezasharifiy/WalletDepend.git'
+    gitUrl = 'https://github.com/rezasharifiy/WalletDepend.git'
+
+    libraryVersion = '1.1.2'
+
+    developerId = 'rezasharifiy'
+    developerName = 'reza sharifi'
+    developerEmail = 'https://github.com/rezasharifiy/WalletDepend'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
 }
 
-def properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-//def properties = new Properties()
-//properties.load(new FileInputStream("local.properties"))
+group = publishedGroupId
+version = libraryVersion
 
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-    publications = ['mavenPublish']
-    configurations = ['archives']
-    override = true
-    pkg {
-        repo = 'wallet'
-        name = 'dependencies'
-        description = " wallet dependencies "
-        publicDownloadNumbers = true
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/rezasharifiy/WalletDepend'
-        version {
-            name = this.version
-            desc = "Version ${this.version}"
-            released = new Date()
-            vcsTag = this.version
+install {
+    repositories.mavenInstaller {
+        pom.project {
+            packaging 'aar'
+            groupId publishedGroupId
+            artifactId artifact
+
+            name libraryName
+            description libraryDescription
+            url siteUrl
+
+            licenses {
+                license {
+                    name licenseName
+                    url licenseUrl
+                }
+            }
+            developers {
+                developer {
+                    id developerId
+                    name developerName
+                    email developerEmail
+                }
+            }
+            scm {
+                connection gitUrl
+                developerConnection gitUrl
+                url siteUrl
+            }
         }
     }
 }
 
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
 
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
 
-apply from: 'https://raw.githubusercontent.com/sky-uk/gradle-maven-plugin/master/gradle-mavenizer.gradle'
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+
+    configurations = ['archives']
+    pkg {
+        repo = bintrayRepo
+        name = bintrayName
+        desc = libraryDescription
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = allLicenses
+        dryRun = false
+        publish = true
+        override = false
+        publicDownloadNumbers = true
+        version {
+            desc = libraryDescription
+        }
+    }
+}
