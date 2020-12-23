@@ -1,9 +1,11 @@
-
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 project.ext {
+
+    libraryVersion = '1.1.7'
+
     bintrayRepo = 'wallet'
     bintrayName = 'walletdepend'
 
@@ -16,7 +18,6 @@ project.ext {
     siteUrl = 'https://github.com/rezasharifiy/WalletDepend.git'
     gitUrl = 'https://github.com/rezasharifiy/WalletDepend.git'
 
-    libraryVersion = '1.1.4'
 
     developerId = 'rezasharifiy'
     developerName = 'reza sharifi'
@@ -29,6 +30,11 @@ project.ext {
 
 group = publishedGroupId
 version = libraryVersion
+
+//
+//configurations.maybeCreate("default")
+//artifacts.add("default", file('kafkaclient.aar'))
+
 
 install {
     repositories.mavenInstaller {
@@ -59,51 +65,219 @@ install {
                 developerConnection gitUrl
                 url siteUrl
             }
+
+            println("end of setting")
+
+        }
+        pom.whenConfigured { pom ->
+            println("######### when config $pom")
+
         }
     }
 }
 
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.java.srcDirs
-}
 
-task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-}
+afterEvaluate { project ->
+    println(">>>after eval $project")
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
+    uploadArchives {
+        println(">>>upload archives")
 
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-}
+        repositories {
+            println(">>>repo")
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
+            mavenDeployer {
 
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
+                repository(url: "file://${buildDir}/outputs/maven")
 
-    configurations = ['archives']
-    pkg {
-        repo = bintrayRepo
-        name = bintrayName
-        desc = libraryDescription
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        licenses = allLicenses
-        dryRun = false
-        publish = true
-        override = false
-        publicDownloadNumbers = true
-        version {
+
+                println(">>>maven deployer")
+
+
+                pom.groupId = group
+                pom.artifactId = artifact
+                pom.version = libraryVersion
+                pom.project {
+
+                    println(">>>pom project")
+
+                    packaging 'aar'
+                    groupId publishedGroupId
+                    artifactId artifact
+
+                    name libraryName
+                    description libraryDescription
+                    url siteUrl
+
+                    licenses {
+                        license {
+                            name licenseName
+                            url licenseUrl
+                        }
+                    }
+                    developers {
+                        developer {
+                            id developerId
+                            name developerName
+                            email developerEmail
+                        }
+                    }
+                    scm {
+                        connection gitUrl
+                        developerConnection gitUrl
+                        url siteUrl
+                    }
+                }
+
+                println(">>>>end of pom")
+
+
+                pom.whenConfigured { pom ->
+                    println(">>>>when configuered")
+                }
+            }
+        }
+    }
+
+
+    task publishIt {
+
+        doFirst {
+            println 'start publishing'
+        }
+        doLast {
+            println 'Published successfully!'
+        }
+        dependsOn 'clean'
+        dependsOn 'install'
+        dependsOn 'bintrayUpload'
+        tasks.findByName('install').mustRunAfter('clean')
+        tasks.findByName('bintrayUpload').mustRunAfter('install')
+
+
+    }
+
+
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.srcDirs
+    }
+
+    task javadoc(type: Javadoc) {
+        source = android.sourceSets.main.java.srcDirs
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    artifacts {
+        archives javadocJar
+        archives sourcesJar
+    }
+
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+    bintray {
+        user = properties.getProperty("bintray.user")
+        key = properties.getProperty("bintray.apikey")
+
+        configurations = ['archives']
+        pkg {
+            repo = bintrayRepo
+            name = bintrayName
             desc = libraryDescription
+            websiteUrl = siteUrl
+            vcsUrl = gitUrl
+            licenses = allLicenses
+            dryRun = false
+            publish = true
+            override = true
+            publicDownloadNumbers = true
+            version {
+                desc = libraryDescription
+            }
         }
     }
 }
+//
+//install {
+//    repositories.mavenInstaller {
+//        pom.project {
+//            packaging 'aar'
+//            groupId publishedGroupId
+//            artifactId artifact
+//
+//            name libraryName
+//            description libraryDescription
+//            url siteUrl
+//
+//            licenses {
+//                license {
+//                    name licenseName
+//                    url licenseUrl
+//                }
+//            }
+//            developers {
+//                developer {
+//                    id developerId
+//                    name developerName
+//                    email developerEmail
+//                }
+//            }
+//            scm {
+//                connection gitUrl
+//                developerConnection gitUrl
+//                url siteUrl
+//            }
+//        }
+//    }
+//}
+//
+//task sourcesJar(type: Jar) {
+//    classifier = 'sources'
+//    from android.sourceSets.main.java.srcDirs
+//}
+//
+//task javadoc(type: Javadoc) {
+//    source = android.sourceSets.main.java.srcDirs
+//    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+//}
+//
+//task javadocJar(type: Jar, dependsOn: javadoc) {
+//    classifier = 'javadoc'
+//    from javadoc.destinationDir
+//}
+//
+//artifacts {
+//    archives javadocJar
+//    archives sourcesJar
+//}
+//
+//Properties properties = new Properties()
+//properties.load(project.rootProject.file('local.properties').newDataInputStream())
+//
+//bintray {
+//    user = properties.getProperty("bintray.user")
+//    key = properties.getProperty("bintray.apikey")
+//
+//    configurations = ['archives']
+//    pkg {
+//        repo = bintrayRepo
+//        name = bintrayName
+//        desc = libraryDescription
+//        websiteUrl = siteUrl
+//        vcsUrl = gitUrl
+//        licenses = allLicenses
+//        dryRun = false
+//        publish = true
+//        override = false
+//        publicDownloadNumbers = true
+//        version {
+//            desc = libraryDescription
+//        }
+//    }
+//}
